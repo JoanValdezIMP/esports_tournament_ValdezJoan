@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-ENVIRONMENT = os.getenv("ENVIRONMENT", "production")
+ENVIRONMENT = os.getenv("ENVIRONMENT", "test")
 
 DB_URL = {
     "development": os.getenv("DB_URL_DEVELOPMENT"),
