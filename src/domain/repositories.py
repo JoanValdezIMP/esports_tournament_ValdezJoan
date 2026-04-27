@@ -11,8 +11,17 @@ from sqlalchemy.orm import Session
 
 # from .db import Session
 from .models import (
-    VideoGameType,
-    Region
+    Region, 
+    VideoGameType, 
+    TournamentMode, 
+    TournamentStatus,
+    Player, 
+    PlayerProfile, 
+    Team, 
+    PlayerTeam, 
+    Tournament, 
+    TeamTournament, 
+    Match
 )
 from typing import TypeVar, Generic
 
