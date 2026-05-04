@@ -8,7 +8,7 @@ from faker import Faker
 sys.path.append(os.path.abspath(os.path.join('.')))
 
 from src.domain.db import Session, engine, Base
-from src.domain.models import (
+from esports_tournament_ValdezJoan.src.domain._old_models import (
     Region, VideoGameType, TournamentMode, TournamentStatus,
     Player, PlayerProfile, Team, PlayerTeam, 
     Tournament, TeamTournament, Match

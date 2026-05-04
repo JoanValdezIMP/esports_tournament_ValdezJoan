@@ -3,7 +3,7 @@ from .config import ENVIRONMENT, DB_URL
 from .db import Base, engine, Session
 
 # IMPORTANTE: Importamos todos los modelos aquí para que Base.metadata los registre
-from .models import (
+from ._old_models import (
     Region, 
     VideoGameType, 
     TournamentMode, 
@@ -17,7 +17,7 @@ from .models import (
     Match
 )
 
-from .repositories import (
+from ._old_repositories import (
     VideoGameTypeRepository,
     RegionRepository,
     PlayerRepository

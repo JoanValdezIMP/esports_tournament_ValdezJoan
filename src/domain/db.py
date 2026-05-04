@@ -4,6 +4,9 @@ from .config import DB_URL
 
 # print(f"Intentando conectar a la base de datos con URL: {DB_URL}")
 
+if DB_URL is None:
+    raise ValueError("DB_URL must be set")
+
 engine = create_engine(DB_URL)
 Session = sessionmaker(bind=engine)
 

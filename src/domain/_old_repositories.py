@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 
 
 # from .db import Session
-from .models import (
+from models import (
     Region, 
     VideoGameType, 
     TournamentMode, 

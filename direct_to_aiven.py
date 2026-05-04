@@ -1,5 +1,5 @@
 from sqlalchemy import create_engine
-from src.domain.models import Base
+from esports_tournament_ValdezJoan.src.domain._old_models import Base
 import sqlalchemy
 
 # CAMBIO CRÍTICO: postgresql+psycopg2://
