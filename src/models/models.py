@@ -1,8 +1,6 @@
-from sqlalchemy import String, Date, Integer, ForeignKey, Boolean, Numeric, DateTime, Text
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-from datetime import date, datetime
-from typing import Optional, List
-from .db import Base
+from common import String, Date, Integer, ForeignKey, Boolean, Numeric, DateTime, Text, Mapped, mapped_column, relationship, date, datetime, Optional, List
+from domain import Base
+
 
 # --- TABLAS DE APOYO (CATÁLOGOS) ---
 
