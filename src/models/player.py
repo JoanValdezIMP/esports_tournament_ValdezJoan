@@ -1,4 +1,4 @@
-from common import String, Date, Integer, ForeignKey, Boolean, Numeric, DateTime, Text, Mapped, mapped_column, relationship, date, datetime, Optional, List
+from common import String, Integer, ForeignKey, Boolean, DateTime, Mapped, mapped_column, relationship, datetime, List
 from domain import Base
 
 from .region import Region

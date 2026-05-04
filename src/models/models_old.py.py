@@ -1,3 +1,4 @@
+'''
 from common import String, Date, Integer, ForeignKey, Boolean, Numeric, DateTime, Text, Mapped, mapped_column, relationship, date, datetime, Optional, List
 from domain import Base
 
@@ -157,3 +158,5 @@ class Match(Base):
     id_tournament: Mapped[int] = mapped_column(ForeignKey("tournament.id_tournament"))
 
     tournament: Mapped["Tournament"] = relationship(back_populates="matches")
+
+'''
