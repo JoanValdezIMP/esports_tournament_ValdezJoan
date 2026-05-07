@@ -2,6 +2,7 @@ from common import Integer, ForeignKey, DateTime, Mapped, mapped_column, relatio
 from domain import Base
 
 from .tournament import Tournament
+from .team import Team
 
 class Match(Base):
     __tablename__ = "match"
@@ -17,6 +18,13 @@ class Match(Base):
     id_team_two: Mapped[int] = mapped_column(ForeignKey("team.id_team"))
     id_team_winner: Mapped[Optional[int]] = mapped_column(ForeignKey("team.id_team"))
     id_tournament: Mapped[int] = mapped_column(ForeignKey("tournament.id_tournament"))
+
+
+# Relaciones con nombres explícitos para que el ORM no se pierda
+    team_one: Mapped["Team"] = relationship(foreign_keys=[id_team_one])
+    team_two: Mapped["Team"] = relationship(foreign_keys=[id_team_two])
+    winner: Mapped[Optional["Team"]] = relationship(foreign_keys=[id_team_winner])
+
 
     tournament: Mapped["Tournament"] = relationship(back_populates="matches")
 
