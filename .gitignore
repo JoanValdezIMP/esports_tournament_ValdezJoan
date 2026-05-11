@@ -1,0 +1,39 @@
+# =========================
+# Entornos Virtuales
+# =========================
+venv/
+.venv/
+env/
+
+# =========================
+# Variables de Entorno (¡CRÍTICO!)
+# =========================
+.env
+.env.local
+
+# =========================
+# Caché de Python
+# =========================
+__pycache__/
+*.py[cod]
+*$py.class
+
+# =========================
+# Bases de datos locales
+# =========================
+*.sqlite
+*.sqlite3
+*.db
+test_db.sqlite
+
+# =========================
+# Jupyter Notebooks
+# =========================
+.ipynb_checkpoints/
+
+# =========================
+# Archivos de IDEs y OS
+# =========================
+.vscode/
+.idea/
+.DS_Store
