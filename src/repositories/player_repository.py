@@ -7,22 +7,32 @@ from models import Player
 from models import PlayerProfile
 from models import PlayerTeam
 from models import Team
+from datetime import date
 
 class SqlAlchemyPlayerRepository(SqlAlchemyRepository[Player, int]):
     
     def get_paginated(self, page: int, page_size: int) -> Sequence[Player]:
-        """Requisito PAC: Paginación para la entidad más grande."""
         offset_value = (page - 1) * page_size
         statement = select(Player).offset(offset_value).limit(page_size)
         return self.session.scalars(statement).all()
 
     def add_player_to_team_direct(self, player_id: int, team_id: int) -> None:
-        """Requisito PAC: Operación de dominio concreta sin actualizar todo el objeto."""
-        from models import PlayerTeam
-        from datetime import date
-        nuevo_vinculo = PlayerTeam(id_player=player_id, id_team=team_id, join_date=date.today())
+        # Corregido: 'registered_at' en lugar de 'join_date'
+        nuevo_vinculo = PlayerTeam(
+            id_player=player_id, 
+            id_team=team_id, 
+            registered_at=date.today() 
+        )
         self.session.add(nuevo_vinculo)
 
+    def get_player_team_history(self, player_id: int) -> Sequence[PlayerTeam]:
+        # Corregido: Ordenar por 'registered_at'
+        statement = (
+            select(PlayerTeam)
+            .where(PlayerTeam.id_player == player_id)
+            .order_by(desc(PlayerTeam.registered_at))
+        )
+        return self.session.scalars(statement).all()
 
     def get_by_nickname(self, nickname: str) -> Optional[Player]:
         """

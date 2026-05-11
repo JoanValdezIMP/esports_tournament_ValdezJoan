@@ -1,6 +1,6 @@
 # src/repositories/__init__.py
 
-# 1. Importamos las implementaciones de SQLAlchemy y las renombramos para el Notebook
+# 1. Importaciones con Alias (para comodidad en el Notebook)
 from .region_repository import SqlAlchemyRegionRepository as RegionRepository
 from .videogametype_repository import SqlAlchemyVideoGameTypeRepository as VideoGameTypeRepository
 from .tournamentmode_repository import SqlAlchemyTournamentModeRepository as TournamentModeRepository
@@ -12,11 +12,13 @@ from .match_repository import SqlAlchemyMatchRepository as MatchRepository
 from .playerteam_repository import SqlAlchemyPlayerTeamRepository as PlayerTeamRepository
 from .teamtournament_repository import SqlAlchemyTeamTournamentRepository as TeamTournamentRepository
 
-# 2. Asegúrate de que el UnitOfWorkFactory también esté aquí
-# (Si lo tienes en esta carpeta, si no, impórtalo de donde esté)
+# --- ESTE ES EL QUE FALTABA ---
+from .playerprofile_repository import SqlAlchemyPlayerProfileRepository as PlayerProfileRepository
+
+# 2. Infraestructura
 from .unit_of_work import UnitOfWorkFactory
 
-# Esto hace que al hacer 'from repositories import *' se traiga todo esto
+# 3. Exportación pública
 __all__ = [
     "RegionRepository",
     "VideoGameTypeRepository",
@@ -28,5 +30,6 @@ __all__ = [
     "MatchRepository",
     "PlayerTeamRepository",
     "TeamTournamentRepository",
+    "PlayerProfileRepository",  # <--- No olvides añadirlo aquí
     "UnitOfWorkFactory"
 ]

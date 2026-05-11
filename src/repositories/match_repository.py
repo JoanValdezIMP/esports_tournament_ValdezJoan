@@ -5,6 +5,18 @@ from .abstract_repository import SqlAlchemyRepository
 
 class SqlAlchemyMatchRepository(SqlAlchemyRepository[Match, int]):
     
+    def get_matches_by_tournament(self, tournament_id: int) -> Sequence[Match]:
+        """
+        Retorna todos los partidos vinculados a un torneo.
+        Requerido por los tests del Notebook.
+        """
+        statement = (
+            select(Match)
+            .where(Match.id_tournament == tournament_id)
+            .order_by(Match.match_date)
+        )
+        return self.session.scalars(statement).all()
+
     def get_head_to_head(self, team_a_id: int, team_b_id: int) -> Sequence[Match]:
         """
         Historial de enfrentamientos directos entre dos equipos.
