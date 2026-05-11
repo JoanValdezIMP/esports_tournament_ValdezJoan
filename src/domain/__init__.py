@@ -1,29 +1,5 @@
-# src/domain/__init__.py
 from .config import ENVIRONMENT, DB_URL
 from .db import Base, engine, Session
-
-# IMPORTANTE: Importamos todos los modelos aquí para que Base.metadata los registre
-from ._old_models import (
-    Region, 
-    VideoGameType, 
-    TournamentMode, 
-    TournamentStatus,
-    Player, 
-    PlayerProfile, 
-    Team, 
-    PlayerTeam, 
-    Tournament, 
-    TeamTournament, 
-    Match
-)
-
-from ._old_repositories import (
-    VideoGameTypeRepository,
-    RegionRepository,
-    PlayerRepository
-    # Repository
-)
-
 
 __all__ = [
     # config
@@ -32,21 +8,4 @@ __all__ = [
     # db
     "Base", "engine", "Session",
 
-    # models
-    "Region",
-    "VideoGameType",
-    "TournamentMode",
-    "TournamentStatus",
-    "Player",
-    "PlayerProfile",
-    "Team",
-    "PlayerTeam",
-    "Tournament",
-    "TeamTournament",
-    "Match",
-
-    # repositories
-    # "Repository",
-    "VideoGameTypeRepository",
-    "RegionRepository",
 ]

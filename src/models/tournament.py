@@ -1,5 +1,7 @@
-from common import String, Date, Integer, ForeignKey, Numeric, Mapped, mapped_column, relationship, date, List
-from domain import Base, Region, VideoGameType, TournamentMode, TournamentStatus, TeamTournament, Match
+from .common import String, Date, Integer, ForeignKey, Numeric, Mapped, mapped_column, relationship, date, List
+from domain.db import Base
+
+
 
 class Tournament(Base):
     __tablename__ = "tournament"

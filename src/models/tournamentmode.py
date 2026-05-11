@@ -1,5 +1,6 @@
-from common import String, Integer, Text, Mapped, mapped_column, relationship, Optional, List
-from domain import Base, Tournament
+from .common import String, Integer, Text, Mapped, mapped_column, relationship, Optional, List
+from domain.db import Base
+
 
 class TournamentMode(Base):
     __tablename__ = "tournament_mode"

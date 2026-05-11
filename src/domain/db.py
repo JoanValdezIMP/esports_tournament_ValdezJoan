@@ -1,6 +1,8 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import DeclarativeBase, sessionmaker
+from sqlalchemy import create_engine, DateTime
+from sqlalchemy.orm import DeclarativeBase, sessionmaker, Mapped, mapped_column
+from datetime import datetime
 from .config import DB_URL
+
 
 # print(f"Intentando conectar a la base de datos con URL: {DB_URL}")
 
@@ -11,8 +13,13 @@ engine = create_engine(DB_URL)
 Session = sessionmaker(bind=engine)
 
 class Base(DeclarativeBase):
-    pass
-
+    # Al añadirlo aquí, todas las clases que heredan de Base lo tendrán
+    last_update: Mapped[datetime] = mapped_column(
+        DateTime, 
+        default=datetime.now, 
+        onupdate=datetime.now, 
+        nullable=True
+    )
 # from sqlalchemy import create_engine
 # from sqlalchemy.orm import DeclarativeBase, sessionmaker
 

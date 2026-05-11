@@ -1,5 +1,6 @@
-from common import Integer, ForeignKey, DateTime, Mapped, mapped_column, relationship, datetime, Optional
-from domain import Base, Team, Tournament
+from .common import Integer, ForeignKey, DateTime, Mapped, mapped_column, relationship, datetime, Optional
+from domain.db import Base
+
 
 class TeamTournament(Base):
     __tablename__ = "team_tournament"

@@ -1,5 +1,5 @@
-from common import String, Integer, Mapped, mapped_column, relationship, List
-from domain import Base, Tournament, Team, Player
+from .common import String, Integer, Mapped, mapped_column, relationship, List
+from domain.db import Base
 
 class Region(Base):
     __tablename__ = "region"

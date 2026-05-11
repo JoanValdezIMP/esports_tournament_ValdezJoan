@@ -1,7 +1,9 @@
-from common import String, Date, Integer, ForeignKey, Boolean, Mapped, mapped_column, relationship, date, Optional, List
-from domain import Base, Region, PlayerTeam, TeamTournament
+from .common import String, Date, Integer, ForeignKey, Boolean, Mapped, mapped_column, relationship, date, Optional, List
+from domain.db import Base
+
 
 class Team(Base):
+    __tablename__ = "team"
 
     id_team: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(100), nullable=False)

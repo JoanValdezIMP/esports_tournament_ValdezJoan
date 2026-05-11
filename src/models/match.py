@@ -1,8 +1,6 @@
-from common import Integer, ForeignKey, DateTime, Mapped, mapped_column, relationship, datetime, Optional
-from domain import Base
+from .common import Integer, ForeignKey, DateTime, Mapped, mapped_column, relationship, datetime, Optional
+from domain.db import Base
 
-from .tournament import Tournament
-from .team import Team
 
 class Match(Base):
     __tablename__ = "match"
