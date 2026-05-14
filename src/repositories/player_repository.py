@@ -57,18 +57,7 @@ class SqlAlchemyPlayerRepository(SqlAlchemyRepository[Player, int]):
         )
         return self.session.scalars(statement).all()
 
-    def get_player_team_history(self, player_id: int) -> Sequence[PlayerTeam]:
-        """
-        Devuelve el historial de equipos de un jugador, ordenado del más reciente al más antiguo.
-        Nota: Devolvemos la entidad asociativa 'PlayerTeam' porque así mantienes 
-        el dato de 'join_date' (cuándo se unió).
-        """
-        statement = (
-            select(PlayerTeam)
-            .where(PlayerTeam.id_player == player_id)
-            .order_by(desc(PlayerTeam.join_date))
-        )
-        return self.session.scalars(statement).all()
+
 
     def get_players_by_region(self, region_id: int) -> Sequence[Player]:
         """

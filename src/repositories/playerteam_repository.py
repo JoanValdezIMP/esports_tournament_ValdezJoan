@@ -7,53 +7,56 @@ from models import PlayerTeam
 class SqlAlchemyPlayerTeamRepository(SqlAlchemyRepository[PlayerTeam, tuple[int, int]]):
     
     def list(self):
-        # Opción 1: Estilo clásico
+        """Lista todos los registros de la tabla intermedia."""
         return self.session.query(PlayerTeam).all()
-
 
     def add_player_to_team(self, team_id: int, player_id: int, join_date: date) -> None:
         """
-        Operación de dominio: Añade un jugador al equipo directamente
-        creando el vínculo, sin necesidad de cargar y actualizar todo el objeto Team.
+        Operación de dominio: Añade un jugador al equipo directamente.
+        Se mapea el parámetro 'join_date' al campo 'registered_at' del modelo.
         """
-        from models import PlayerTeam # Evita importaciones circulares arriba
-        new_link = PlayerTeam(id_player=player_id, id_team=team_id, join_date=join_date)
+        """
+        Registra la unión de un jugador a un equipo en la tabla asociativa.
+        
+        Realiza una importación local para evitar dependencias circulares, 
+        instancia el vínculo mapeando la fecha al campo 'registered_at' 
+        y lo añade a la sesión para su posterior persistencia.
+        """
+        from models import PlayerTeam # Evita importaciones circulares
+        new_link = PlayerTeam(
+            id_player=player_id, 
+            id_team=team_id, 
+            registered_at=join_date # Cambiado de join_date a registered_at
+        )
         self.session.add(new_link)
-
 
     def get_current_team(self, player_id: int) -> Optional[PlayerTeam]:
         """
         Busca el último equipo al que se unió el jugador.
-        Ordenamos por fecha de entrada de forma descendente y cogemos el primero.
+        Ordenamos por 'registered_at' de forma descendente.
         """
         statement = (
             select(PlayerTeam)
             .where(PlayerTeam.id_player == player_id)
-            .order_by(desc(PlayerTeam.join_date))
-            # limit(1) no es estrictamente necesario si usamos scalar(), 
-            # pero a nivel de base de datos hace la consulta más eficiente.
+            .order_by(desc(PlayerTeam.registered_at)) # Cambiado a registered_at
             .limit(1) 
         )
         return self.session.scalar(statement)
 
     def list_players_in_team(self, team_id: int) -> Sequence[PlayerTeam]:
         """
-        Saca el roster actual (e histórico) de un equipo.
-        Devolvemos PlayerTeam para que en tu frontend puedas mostrar 
-        no solo el jugador, sino también "Miembro desde: {join_date}".
+        Saca el roster de un equipo ordenado por veteranía (los primeros en unirse primero).
         """
         statement = (
             select(PlayerTeam)
             .where(PlayerTeam.id_team == team_id)
-            # Podríamos ordenarlos por los más veteranos primero
-            .order_by(PlayerTeam.join_date.asc())
+            .order_by(PlayerTeam.registered_at.asc()) # Cambiado a registered_at
         )
         return self.session.scalars(statement).all()
 
     def is_player_in_team(self, player_id: int, team_id: int) -> bool:
         """
-        Validador booleano rápido. Ideal para las reglas de negocio 
-        antes de inscribir a alguien en un partido.
+        Validador booleano rápido para comprobar pertenencia.
         """
         statement = (
             select(PlayerTeam)
@@ -65,6 +68,5 @@ class SqlAlchemyPlayerTeamRepository(SqlAlchemyRepository[PlayerTeam, tuple[int,
             )
             .limit(1)
         )
-        # Si scalar() devuelve algo, es que existe (True). Si devuelve None, es False.
         resultado = self.session.scalar(statement)
         return resultado is not None
