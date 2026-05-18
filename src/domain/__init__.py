@@ -1,5 +1,5 @@
 from .config import ENVIRONMENT, DB_URL
-from .db import Base, engine, Session
+from .db import Base, engine, Session, get_uow
 
 __all__ = [
     # config

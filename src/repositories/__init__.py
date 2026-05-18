@@ -16,6 +16,7 @@ from .teamtournament_repository import SqlAlchemyTeamTournamentRepository as Tea
 from .playerprofile_repository import SqlAlchemyPlayerProfileRepository as PlayerProfileRepository
 
 # 2. Infraestructura
+from .unit_of_work import SqlAlchemyUnitOfWork 
 from .unit_of_work import UnitOfWorkFactory
 
 # 3. Exportación pública

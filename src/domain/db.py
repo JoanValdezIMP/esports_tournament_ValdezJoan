@@ -3,7 +3,7 @@ from sqlalchemy.orm import DeclarativeBase, sessionmaker, Mapped, mapped_column
 from datetime import datetime
 from .config import DB_URL
 
-from repositories import UnitOfWorkFactory
+from repositories.unit_of_work import UnitOfWorkFactory
 
 # print(f"Intentando conectar a la base de datos con URL: {DB_URL}")
 
