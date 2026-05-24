@@ -13,7 +13,7 @@ class PlayerProfile(Base):
     ranking_position: Mapped[int] = mapped_column(Integer)
     # last_update: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
 
-    id_player: Mapped[int] = mapped_column(ForeignKey("player.id_player"), unique=True)
+    id_player: Mapped[int] = mapped_column(ForeignKey("player.id_player", ondelete="CASCADE"), unique=True, nullable=False)
     player: Mapped["Player"] = relationship(back_populates="profile")
 
 

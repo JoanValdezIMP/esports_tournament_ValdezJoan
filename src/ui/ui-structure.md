@@ -10,7 +10,7 @@ src/
     └── views/              # Los submenús específicos divididos por lógica
         ├── __init__.py
         ├── catalog_views.py   # CRUDs simples: Regiones, Modos, Estados, Tipos de Juego
-        ├── player_views.py    # CRUD de Jugadores + Perfil (Relación 1:1)
+        ├── player_views.py    # CRUD de Jgadorues + Perfil (Relación 1:1)
         ├── team_views.py      # CRUD de Equipos + Fichajes (Relación N:M con atributos)
         ├── tournament_views.py# CRUD de Torneos (Relación 1:N)
         └── match_views.py     # CRUD de Partidos y gestión de resultados

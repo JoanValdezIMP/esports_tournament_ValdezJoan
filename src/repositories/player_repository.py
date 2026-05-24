@@ -65,3 +65,12 @@ class SqlAlchemyPlayerRepository(SqlAlchemyRepository[Player, int]):
         """
         statement = select(Player).where(Player.id_region == region_id)
         return self.session.scalars(statement).all()
+    
+    # A src/repositories/player_repository.py, afegeix aquest mètode dins de la classe:
+
+    def search_by_nickname(self, nickname: str) -> Sequence[Player]:
+        """
+        Cerca jugadors que continguin la cadena introduïda en el seu nickname (cerca parcial).
+        """
+        statement = select(Player).where(Player.nickname.ilike(f"%{nickname}%"))
+        return self.session.scalars(statement).all()

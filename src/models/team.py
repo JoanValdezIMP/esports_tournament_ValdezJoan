@@ -7,7 +7,7 @@ class Team(Base):
 
     id_team: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
-    creation_date: Mapped[date] = mapped_column(Date, nullable=False)
+    creation_date: Mapped[date] = mapped_column(Date, nullable=False, default=date.today)
     logo_url: Mapped[Optional[str]] = mapped_column(String(255))
     active: Mapped[bool] = mapped_column(Boolean, default=True)
     

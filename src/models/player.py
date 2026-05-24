@@ -14,5 +14,15 @@ class Player(Base):
     id_region: Mapped[int] = mapped_column(ForeignKey("region.id_region"))
 
     region: Mapped["Region"] = relationship(back_populates="players")
-    profile: Mapped["PlayerProfile"] = relationship(back_populates="player", uselist=False)
+    profile: Mapped["PlayerProfile"] = relationship(
+        back_populates="player",
+        uselist=False,
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        single_parent=True,
+    )
     player_teams: Mapped[List["PlayerTeam"]] = relationship(back_populates="player")
+
+    @property
+    def id(self):
+        return self.id_player
