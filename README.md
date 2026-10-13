@@ -1,43 +1,39 @@
-# electronic sport tournament managment
-An E-sport tournament management aplication by Joan Valdez
+# E-sports Tournament Back Office
 
-app structure:
+This project manages players, teams, tournaments, matches, catalogs, and their
+association records. The application is split into two programs:
 
+* `server.py` handles requests, business validation, repositories, and
+  SQLAlchemy persistence.
+* `client.py` is an interactive command-line client. It only sends JSON
+  protocol messages over blocking TCP sockets; it has no model or repository
+  imports.
 
-MENÚ PRINCIPAL
-│
-├── 1. GESTIÓ D'EQUIPS
-│   ├── 1.1 Llistar Equips
-│   ├── 1.2 Crear Equip
-│   ├── 1.3 Actualitzar Equip
-│   ├── 1.4 Eliminar Equip
-│   └── 1.5 Assignar Jugador a Equip (N:M amb atributs)
-│
-├── 2. GESTIÓ DE JUGADORS
-│   ├── 2.1 Llistar Jugadors
-│   ├── 2.2 Afegir Jugador (1:1 amb Perfil)
-│   ├── 2.3 Actualitzar Jugador
-│   ├── 2.4 Eliminar Jugador
-│   └── 2.5 Cercar Jugador per Nickname (Filtre personalitzat)
-│
-├── 3. CATÀLEGS
-│   ├── 3.1 Veure Regions
-│   ├── 3.2 Gestionar Modes de Torneig
-│   ├── 3.3 Veure Estats de Torneig
-│   ├── 3.4 Gestionar Tipus de Videojoc
-│   └── 3.5 Veure Perfils de Jugador
-│
-├── 4. GESTIÓ DE PARTITS
-│   ├── 4.1 Llistar Calendari/Resultats
-│   ├── 4.2 Registrar Nou Partit
-│   ├── 4.3 Actualitzar Resultat
-│   └── 4.4 Eliminar Partit
-│
-├── 5. GESTIÓ DE TORNEJOS
-│   ├── 5.1 Llistar Tornejos
-│   ├── 5.2 Crear Torneig
-│   ├── 5.3 Actualitzar Torneig
-│   ├── 5.4 Eliminar Torneig
-│   └── 5.5 Inscriure Equip a Torneig (N:M amb atributs)
-│
-└── 0. SORTIR
+## Run
+
+Install dependencies with `pip install -r requirements.txt`. Configure
+`DB_URL_DEVELOPMENT` (or the matching URL for the configured `ENVIRONMENT`)
+for the database. Start the server first:
+
+```powershell
+python server.py
+```
+
+Start a client in another terminal:
+
+```powershell
+python client.py
+```
+
+The default listener is `127.0.0.1:5000`. Set `SERVER_HOST` and `SERVER_PORT`
+on both programs to change the connection address. The client supports
+list/read/create/update/delete for every entity, including association
+entities with composite keys, plus nickname search for players. Enter field
+values and identifiers as JSON when prompted. See [docs/protocol.md](docs/protocol.md)
+for the complete wire format and validation rules.
+
+Run the unit tests with:
+
+```powershell
+pytest
+```

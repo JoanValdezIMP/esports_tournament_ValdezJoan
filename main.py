@@ -1,24 +1,15 @@
-# main.py
-import sys
+"""Backward-compatible entry point for the interactive TCP client."""
+
 import os
+import sys
 
-# Assegurem que Python trobi la carpeta 'src'
-sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
 
-# IMPORTANTE: Importa 'Base' i 'engine' des d'on vas definir la teva DB
-from domain.db import get_uow, Base, engine 
-from ui.context import UIContext
-from ui.cli import main_menu
+from client.cli import run_client
+
 
 if __name__ == "__main__":
-    Base.metadata.create_all(engine)
-
-    # Inicialitzem el context
-    contexto = UIContext(uow_factory=get_uow)
-    
-    # Llancem el menú principal
-
-    try:
-        main_menu(contexto)
-    except KeyboardInterrupt:
-        contexto.console.print("\n\n[bold red]Programa interromput.[/bold red]")
+    run_client(
+        os.getenv("SERVER_HOST", "127.0.0.1"),
+        int(os.getenv("SERVER_PORT", "5000")),
+    )

@@ -1,17 +1,26 @@
 
+The application is split into independent TCP client and server programs:
+
+```text
+client.py
+└── src/client/
+    ├── cli.py              # Interactive UI; sends DTOs through TCP sockets
+    └── tcp_client.py       # Blocking socket client
+
+server.py
+└── src/server/
+    ├── tcp_server.py       # Blocking listener; serves one client at a time
+    ├── router.py           # Request validation and operation dispatch
+    ├── services.py         # Business logic, validation, and DTO conversion
+    └── entities.py         # Server-only SQLAlchemy model allowlist
+
 src/
-├── domain/
-├── models/
-├── repositories/
-└── ui/
-    ├── __init__.py
-    ├── cli.py              # El orquestador: contiene el bucle principal y el Menú General (Command Line Interface)
-    ├── context.py          # Gestiona de forma limpia el Unit of Work y la consola de Rich
-    ├── components.py       # Diseños reutilizables de Rich (cabeceras, tablas estándar, spinners)
-    └── views/              # Los submenús específicos divididos por lógica
-        ├── __init__.py
-        ├── catalog_views.py   # CRUDs simples: Regiones, Modos, Estados, Tipos de Juego
-        ├── player_views.py    # CRUD de Jgadorues + Perfil (Relación 1:1)
-        ├── team_views.py      # CRUD de Equipos + Fichajes (Relación N:M con atributos)
-        ├── tournament_views.py# CRUD de Torneos (Relación 1:N)
-        └── match_views.py     # CRUD de Partidos y gestión de resultados
+├── shared/
+│   └── protocol.py         # Newline-delimited JSON serialization
+├── repositories/           # Server-side persistence layer
+├── models/                 # Server-side SQLAlchemy models
+└── domain/                 # Database configuration and unit of work
+```
+
+The client imports only the client UI, the TCP transport, and shared protocol.
+See `docs/protocol.md` for the wire contract.
