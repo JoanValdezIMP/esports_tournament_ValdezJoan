@@ -285,6 +285,6 @@ correctas**.
 ## 10. Commit de referencia
 
 La versión entregada de la refactorización está en el commit
-`c544bf4447fa814e737eec373a263a66f6e3bad1`, señalado por la etiqueta
+`e3c255f2d4910c2fe5ae35cb1b0fdf9d901d0fae`, señalado por la etiqueta
 `v2.0.0`. Este documento explica esa implementación; al añadirse ahora, será
 un commit posterior al commit originalmente etiquetado.

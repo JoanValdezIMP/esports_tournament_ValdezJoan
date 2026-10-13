@@ -1,73 +1,77 @@
-# TCP JSON protocol
+# Protocol JSON sobre TCP
 
-The application uses blocking TCP sockets and UTF-8 JSON messages delimited by
-a newline (`\n`). Each request and response is one JSON object on a separate
-line. A connection may carry multiple requests; the server processes one
-connected client at a time. Messages are limited to 65,536 bytes, excluding
-the delimiter.
+L'aplicació utilitza sockets TCP bloquejants i missatges JSON codificats en
+UTF-8, delimitats per un salt de línia (`\n`). Cada petició i resposta és un
+objecte JSON en una línia independent. Una connexió pot transportar diverses
+peticions; el servidor atén un sol client cada vegada. La mida màxima del
+contingut del missatge és de 65.536 bytes, sense comptar el delimitador.
 
-## Request and response format
+## Format de petició i resposta
 
-Requests use the following shape:
+Les peticions tenen aquesta estructura:
 
 ```json
 {"operation":"list","entity":"teams"}
 ```
 
-Successful responses contain `ok: true` and a JSON-compatible DTO in `data`:
+Les respostes correctes contenen `ok: true` i un DTO compatible amb JSON al
+camp `data`:
 
 ```json
 {"ok":true,"data":[{"id_team":8,"name":"Blue Wolves","id_region":1}]}
 ```
 
-Errors contain `ok: false` and a stable error `code` with a human-readable
-`message`:
+Les respostes d'error contenen `ok: false` i un codi estable `code`, juntament
+amb un missatge llegible al camp `message`:
 
 ```json
 {"ok":false,"error":{"code":"not_found","message":"teams record was not found."}}
 ```
 
-## Operations
+## Operacions
 
-All CRUD operations require an allowlisted `entity`. Available entities are
-`regions`, `video_game_types`, `tournament_modes`, `tournament_statuses`,
-`players`, `player_profiles`, `player_teams`, `teams`, `tournaments`,
-`team_tournaments`, and `matches`.
+Totes les operacions CRUD requereixen una entitat inclosa a la llista
+autoritzada. Les entitats disponibles són `regions`, `video_game_types`,
+`tournament_modes`, `tournament_statuses`, `players`, `player_profiles`,
+`player_teams`, `teams`, `tournaments`, `team_tournaments` i `matches`.
 
-| Operation | Request | Successful `data` |
+| Operació | Petició | `data` de la resposta correcta |
 | --- | --- | --- |
-| List | `{"operation":"list","entity":"teams"}` | Array of entity DTOs |
-| Read | `{"operation":"get","entity":"teams","id":8}` | One entity DTO |
-| Create | `{"operation":"create","entity":"teams","data":{"name":"Blue Wolves","id_region":1}}` | Created entity DTO |
-| Update | `{"operation":"update","entity":"teams","id":8,"data":{"name":"Blue Wolves"}}` | Updated entity DTO |
-| Delete | `{"operation":"delete","entity":"teams","id":8}` | `{"deleted":true,"id":8}` |
-| Search players | `{"operation":"player.search","nickname":"blue"}` | Matching player DTO array |
+| Llistar | `{"operation":"list","entity":"teams"}` | Llista de DTOs de l'entitat |
+| Consultar | `{"operation":"get","entity":"teams","id":8}` | Un DTO de l'entitat |
+| Crear | `{"operation":"create","entity":"teams","data":{"name":"Blue Wolves","id_region":1}}` | DTO de l'entitat creada |
+| Actualitzar | `{"operation":"update","entity":"teams","id":8,"data":{"name":"Blue Wolves"}}` | DTO de l'entitat actualitzada |
+| Eliminar | `{"operation":"delete","entity":"teams","id":8}` | `{"deleted":true,"id":8}` |
+| Cercar jugadors | `{"operation":"player.search","nickname":"blue"}` | Llista de DTOs dels jugadors coincidents |
 
-DTOs contain mapped scalar database fields only; relationship objects and ORM
-instances are never sent. Dates and datetimes are ISO 8601 strings, and
-decimal values are JSON numbers. Client-supplied date and datetime values must
-also be ISO 8601 strings. The server generates single-column auto-increment
-primary keys. For composite keys, `id` must be an object containing every
-primary-key field, for example:
+Els DTOs només contenen camps escalars mapejats a la base de dades; mai no
+s'envien objectes de relació ni instàncies ORM. Les dates i les marques de
+temps s'expressen com a cadenes ISO 8601, i els valors decimals s'envien com a
+nombres JSON. Les dates i marques de temps proporcionades pel client també han
+d'estar en format ISO 8601. El servidor genera les claus primàries d'una sola
+columna autoincrementals. Per a les claus compostes, `id` ha de ser un objecte
+que contingui tots els camps de la clau primària. Per exemple:
 
 ```json
 {"operation":"get","entity":"player_teams","id":{"id_player":3,"id_team":8}}
 ```
 
-When either match score is updated, the server recalculates the winner from
-the resulting scores; tied scores have no winner.
+Quan s'actualitza qualsevol de les puntuacions d'un partit, el servidor torna
+a calcular el guanyador a partir de les puntuacions resultants. En cas
+d'empat, el partit queda sense guanyador.
 
-Create and update `data` must be non-empty objects containing mapped scalar
-fields only. Updates cannot change primary keys. Unknown entities, fields,
-invalid values, malformed requests, and missing records produce an error
-response rather than a successful empty result.
+Les dades `data` d'una creació o actualització han de ser objectes no buits i
+només poden contenir camps escalars mapejats. Les actualitzacions no poden
+modificar les claus primàries. Les entitats o els camps desconeguts, els
+valors no vàlids, les peticions mal formades i els registres inexistents
+generen una resposta d'error, no pas una resposta correcta buida.
 
-## Error codes
+## Codis d'error
 
-* `invalid_request`: unsupported operation, invalid request shape, entity, or
-  field value.
-* `not_found`: a requested record does not exist.
-* `protocol_error`: invalid UTF-8/JSON framing, an oversized message, or a
-  missing newline delimiter.
-* `internal_error`: unexpected persistence or server-side failure. Details are
-  logged on the server and not exposed to the client.
+* `invalid_request`: operació, estructura de petició, entitat o valor de camp
+  no vàlid.
+* `not_found`: el registre sol·licitat no existeix.
+* `protocol_error`: codificació UTF-8 o JSON incorrecta, missatge massa gran
+  o manca del delimitador de salt de línia.
+* `internal_error`: error inesperat del servidor o de persistència. El detall
+  s'anota al registre del servidor i no s'exposa al client.
