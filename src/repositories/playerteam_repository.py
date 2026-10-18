@@ -4,29 +4,34 @@ from datetime import date
 from .abstract_repository import SqlAlchemyRepository
 from models import PlayerTeam
 
-class SqlAlchemyPlayerTeamRepository(SqlAlchemyRepository[PlayerTeam, tuple[int, int]]):
-    
+
+class SqlAlchemyPlayerTeamRepository(
+    SqlAlchemyRepository[PlayerTeam, tuple[int, int]]
+):
     def list(self):
         """Lista todos los registros de la tabla intermedia."""
         return self.session.query(PlayerTeam).all()
 
-    def add_player_to_team(self, team_id: int, player_id: int, join_date: date) -> None:
+    def add_player_to_team(
+        self, team_id: int, player_id: int, join_date: date
+    ) -> None:
         """
         Operación de dominio: Añade un jugador al equipo directamente.
         Se mapea el parámetro 'join_date' al campo 'registered_at' del modelo.
         """
         """
         Registra la unión de un jugador a un equipo en la tabla asociativa.
-        
-        Realiza una importación local para evitar dependencias circulares, 
-        instancia el vínculo mapeando la fecha al campo 'registered_at' 
+
+        Realiza una importación local para evitar dependencias circulares,
+        instancia el vínculo mapeando la fecha al campo 'registered_at'
         y lo añade a la sesión para su posterior persistencia.
         """
-        from models import PlayerTeam # Evita importaciones circulares
+        from models import PlayerTeam  # Evita importaciones circulares
+
         new_link = PlayerTeam(
-            id_player=player_id, 
-            id_team=team_id, 
-            registered_at=join_date # Cambiado de join_date a registered_at
+            id_player=player_id,
+            id_team=team_id,
+            registered_at=join_date,  # Cambiado de join_date a registered_at
         )
         self.session.add(new_link)
 
@@ -38,19 +43,21 @@ class SqlAlchemyPlayerTeamRepository(SqlAlchemyRepository[PlayerTeam, tuple[int,
         statement = (
             select(PlayerTeam)
             .where(PlayerTeam.id_player == player_id)
-            .order_by(desc(PlayerTeam.registered_at)) # Cambiado a registered_at
-            .limit(1) 
+            # Cambiado a registered_at
+            .order_by(desc(PlayerTeam.registered_at))
+            .limit(1)
         )
         return self.session.scalar(statement)
 
     def list_players_in_team(self, team_id: int) -> Sequence[PlayerTeam]:
         """
-        Saca el roster de un equipo ordenado por veteranía (los primeros en unirse primero).
+        Return a team's roster ordered by registration date.
         """
         statement = (
             select(PlayerTeam)
             .where(PlayerTeam.id_team == team_id)
-            .order_by(PlayerTeam.registered_at.asc()) # Cambiado a registered_at
+            # Cambiado a registered_at
+            .order_by(PlayerTeam.registered_at.asc())
         )
         return self.session.scalars(statement).all()
 
@@ -63,7 +70,7 @@ class SqlAlchemyPlayerTeamRepository(SqlAlchemyRepository[PlayerTeam, tuple[int,
             .where(
                 and_(
                     PlayerTeam.id_player == player_id,
-                    PlayerTeam.id_team == team_id
+                    PlayerTeam.id_team == team_id,
                 )
             )
             .limit(1)

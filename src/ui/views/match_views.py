@@ -1,194 +1,191 @@
-# src/ui/views/match_views.py
+from rich.prompt import Confirm, IntPrompt, Prompt
 from rich.table import Table
-from rich.prompt import Prompt, Confirm, IntPrompt
+
+from client.tcp_client import ProtocolError, ServerConnectionError
 from ui.context import UIContext
-from datetime import datetime
 
-from models import Match
-from repositories import MatchRepository
 
-# menu
-# llistar partits
-# crear partit
-# actualitzar resultat
-# eliminar partit
-
-def match_menu(ctx: UIContext):
-    """Submenú principal para Partidos"""
+def match_menu(ctx: UIContext) -> None:
     while True:
         ctx.console.clear()
         ctx.print_header("Gestió de Partits (Matches)")
-        
-        ctx.console.print("[bold cyan]1.[/bold cyan] Calendari i Resultats (Llistar)")
+        ctx.console.print("[bold cyan]1.[/bold cyan] Calendari i Resultats")
         ctx.console.print("[bold cyan]2.[/bold cyan] Registrar Nou Partit")
         ctx.console.print("[bold cyan]3.[/bold cyan] Actualitzar Resultat")
         ctx.console.print("[bold cyan]4.[/bold cyan] Eliminar Partit")
-        ctx.console.print("[bold cyan]0.[/bold cyan] Tornar al Menú Principal\n")
-        
-        opcion = Prompt.ask("[bold green]Tria una opció[/bold green]", choices=["0", "1", "2", "3", "4"])
-        
-        if opcion == "1":
-            listar_partidos(ctx)
-        elif opcion == "2":
-            registrar_partido(ctx)
-        elif opcion == "3":
-            actualizar_resultado(ctx)
-        elif opcion == "4":
-            eliminar_partido(ctx)
-        elif opcion == "0":
+        ctx.console.print(
+            "[bold cyan]0.[/bold cyan] Tornar al Menú Principal\n"
+        )
+        option = Prompt.ask(
+            "[bold green]Tria una opció[/bold green]",
+            choices=["0", "1", "2", "3", "4"],
+        )
+        if option == "1":
+            list_matches(ctx)
+        elif option == "2":
+            create_match(ctx)
+        elif option == "3":
+            update_match_result(ctx)
+        elif option == "4":
+            delete_match(ctx)
+        elif option == "0":
             break
 
 
-
-def listar_partidos(ctx: UIContext):
+def list_matches(ctx: UIContext) -> None:
     ctx.print_header("Historial i Calendari de Partits")
-    
-    with ctx.uow_factory() as uow:
-        repo = MatchRepository(uow, Match)
-        partidos = repo.get_all()
-        
-        if not partidos:
-            ctx.console.print("[yellow]Encara no hi ha partits registrats al sistema.[/yellow]\n")
-            Prompt.ask("Prem Enter per tornar")
-            return
-
-        table = Table(show_header=True, header_style="bold green")
-        table.add_column("ID", justify="right", style="dim", width=5)
-        table.add_column("Data")
-        table.add_column("Torneig", justify="center")
-        table.add_column("Equip A", justify="center")
-        table.add_column("Equip B", justify="center")
-        table.add_column("Resultat", justify="center", style="bold yellow")
-        table.add_column("Ronda", justify="center")
-
-        for p in partidos:
-            fecha = p.match_date.strftime("%Y-%m-%d %H:%M") if getattr(p, "match_date", None) else "N/A"
-            resultado = f"{p.score_team_one} - {p.score_team_two}"
-            table.add_row(
-                str(p.id),
-                fecha,
-                str(getattr(p, "id_tournament", "N/A")),
-                str(getattr(p, "id_team_one", "N/A")),
-                str(getattr(p, "id_team_two", "N/A")),
-                resultado,
-                str(getattr(p, "round_number", "N/A"))
+    matches = _request(ctx, "matches.list", {})
+    if matches is None:
+        Prompt.ask("Prem Enter per tornar")
+        return
+    if not isinstance(matches, list) or any(
+        not isinstance(match, dict)
+        or any(
+            field not in match
+            for field in (
+                "id",
+                "match_date",
+                "tournament_id",
+                "team_one_id",
+                "team_two_id",
+                "score_team_one",
+                "score_team_two",
+                "round_number",
             )
-
+        )
+        for match in matches
+    ):
+        ctx.print_error(
+            "El servidor ha retornat una llista de partits no vàlida."
+        )
+    elif not matches:
+        ctx.console.print(
+            "[yellow]Encara no hi ha partits registrats.[/yellow]\n"
+        )
+    else:
+        table = Table(show_header=True, header_style="bold green")
+        for heading in (
+            "ID",
+            "Data",
+            "Torneig",
+            "Equip A",
+            "Equip B",
+            "Resultat",
+            "Ronda",
+        ):
+            table.add_column(heading)
+        for match in matches:
+            table.add_row(
+                str(match["id"]),
+                str(match["match_date"]),
+                str(match["tournament_id"]),
+                str(match["team_one_id"]),
+                str(match["team_two_id"]),
+                f"{match['score_team_one']} - {match['score_team_two']}",
+                str(match["round_number"]),
+            )
         ctx.console.print(table)
-    
     Prompt.ask("\nPrem Enter per tornar")
 
-def registrar_partido(ctx: UIContext):
+
+def create_match(ctx: UIContext) -> None:
     ctx.print_header("Registrar Nou Partit")
-    ctx.console.print("[dim]Afegeix un partit al calendari (els resultats es poden afegir després)[/dim]\n")
+    result = _request(
+        ctx,
+        "matches.create",
+        {
+            "tournament_id": IntPrompt.ask("ID del Torneig"),
+            "team_one_id": IntPrompt.ask("ID de l'Equip A (Local)"),
+            "team_two_id": IntPrompt.ask("ID de l'Equip B (Visitant)"),
+            "round_number": IntPrompt.ask("Ronda del partit"),
+            "duration_minutes": IntPrompt.ask("Durada en minuts"),
+        },
+    )
+    if result is not None:
+        ctx.print_success("El partit s'ha registrat al calendari.")
+    Prompt.ask("Prem Enter per continuar")
 
-    torneo_id = Prompt.ask("ID del Torneig al qual pertany")
-    eq_a_id = Prompt.ask("ID de l'Equip A (Local)")
-    eq_b_id = Prompt.ask("ID de l'Equip B (Visitant)")
 
-    if not (torneo_id.isdigit() and eq_a_id.isdigit() and eq_b_id.isdigit()):
-        ctx.print_error("Els IDs han de ser numèrics.")
+def update_match_result(ctx: UIContext) -> None:
+    ctx.print_header("Actualitzar Resultat del Partit")
+    match_id = _prompt_id(ctx, "Introdueix l'ID del partit")
+    if match_id is None:
+        return
+    matches = _request(ctx, "matches.list", {})
+    match = _find_match(matches, match_id)
+    if match is None:
+        ctx.print_error("Partit no trobat.")
         Prompt.ask("Prem Enter per tornar")
         return
+    team_one_score = IntPrompt.ask(
+        f"Puntuació de l'Equip A (actual: {match['score_team_one']})",
+        default=match["score_team_one"],
+    )
+    team_two_score = IntPrompt.ask(
+        f"Puntuació de l'Equip B (actual: {match['score_team_two']})",
+        default=match["score_team_two"],
+    )
+    if (
+        _request(
+            ctx,
+            "matches.update_result",
+            {
+                "id": match_id,
+                "score_team_one": team_one_score,
+                "score_team_two": team_two_score,
+            },
+        )
+        is not None
+    ):
+        ctx.print_success("Resultat actualitzat amb èxit.")
+    Prompt.ask("Prem Enter per continuar")
 
-    round_number = IntPrompt.ask("Ronda del partit")
-    duration_minutes = IntPrompt.ask("Durada en minuts")
 
-    nuevo_partido = Match(
-        match_date=datetime.now(),
-        score_team_one=0,
-        score_team_two=0,
-        round_number=round_number,
-        duration_minutes=duration_minutes,
-        id_tournament=int(torneo_id),
-        id_team_one=int(eq_a_id),
-        id_team_two=int(eq_b_id),
-        id_team_winner=None,
+def delete_match(ctx: UIContext) -> None:
+    ctx.print_header("Cancel·lar / Eliminar Partit")
+    match_id = _prompt_id(ctx, "Introdueix l'ID del partit a eliminar")
+    if match_id is None:
+        return
+    if _find_match(_request(ctx, "matches.list", {}), match_id) is None:
+        ctx.print_error("Partit no trobat.")
+        Prompt.ask("Prem Enter per tornar")
+        return
+    if Confirm.ask(f"Segur que vols cancel·lar el partit ID {match_id}?"):
+        if _request(ctx, "matches.delete", {"id": match_id}) is not None:
+            ctx.print_success("Partit eliminat del calendari.")
+    Prompt.ask("Prem Enter per continuar")
+
+
+def _find_match(matches: object, match_id: int) -> dict | None:
+    if not isinstance(matches, list):
+        return None
+    return next(
+        (
+            match
+            for match in matches
+            if isinstance(match, dict) and match.get("id") == match_id
+        ),
+        None,
     )
 
-    with ctx.uow_factory() as uow:
-        repo = MatchRepository(uow, Match)
-        try:
-            repo.add(nuevo_partido)
-            uow.commit()
-            ctx.print_success("El partit s'ha registrat al calendari.")
-        except Exception as e:
-            ctx.print_error(f"Error en registrar el partit. Verifica que els IDs d'equips i tornejos existeixin.\nDetall: {e}")
 
-    Prompt.ask("Prem Enter per continuar")
-
-def actualizar_resultado(ctx: UIContext):
-    ctx.print_header("Actualitzar Resultat del Partit")
-    id_str = Prompt.ask("Introdueix l'ID del partit")
-    
-    if not id_str.isdigit():
-        ctx.print_error("L'ID ha de ser numèric.")
+def _prompt_id(ctx: UIContext, message: str) -> int | None:
+    value = Prompt.ask(message)
+    if not value.isdigit() or int(value) <= 0:
+        ctx.print_error("L'ID ha de ser un número positiu.")
         Prompt.ask("Prem Enter per tornar")
-        return
+        return None
+    return int(value)
 
-    with ctx.uow_factory() as uow:
-        repo = MatchRepository(uow, Match)
-        partido = repo.get(int(id_str))
-        
-        if not partido:
-            ctx.print_error("Partit no trobat.")
-            Prompt.ask("Prem Enter per tornar")
-            return
-            
-        ctx.console.print(
-            f"\n[bold cyan]Partit Seleccionat:[/bold cyan] Equip A ({getattr(partido, 'id_team_one', '?')}) vs Equip B ({getattr(partido, 'id_team_two', '?')})"
-        )
 
-        puntuacion_a = Prompt.ask(
-            "Puntuació de l'Equip A (Local)",
-            default=str(partido.score_team_one) if partido.score_team_one is not None else "0"
-        )
-        puntuacion_b = Prompt.ask(
-            "Puntuació de l'Equip B (Visitant)",
-            default=str(partido.score_team_two) if partido.score_team_two is not None else "0"
-        )
-
-        if puntuacion_a.isdigit() and puntuacion_b.isdigit():
-            partido.score_team_one = int(puntuacion_a)
-            partido.score_team_two = int(puntuacion_b)
-
-            if partido.score_team_one > partido.score_team_two:
-                partido.id_team_winner = partido.id_team_one
-            elif partido.score_team_two > partido.score_team_one:
-                partido.id_team_winner = partido.id_team_two
-            else:
-                partido.id_team_winner = None
-
-            uow.commit()
-            ctx.print_success("Resultat actualitzat amb èxit.")
-        else:
-            ctx.print_error("Les puntuacions han de ser nombres vàlids.")
-            
-    Prompt.ask("Prem Enter per continuar")
-
-def eliminar_partido(ctx: UIContext):
-    ctx.print_header("Cancel·lar / Eliminar Partit")
-    id_str = Prompt.ask("Introdueix l'ID del partit a eliminar")
-    
-    if not id_str.isdigit():
-        ctx.print_error("L'ID ha de ser numèric.")
-        Prompt.ask("Prem Enter per tornar")
-        return
-
-    with ctx.uow_factory() as uow:
-        repo = MatchRepository(uow, Match)
-        partido = repo.get(int(id_str))
-        
-        if not partido:
-            ctx.print_error("Partit no trobat.")
-            Prompt.ask("Prem Enter per tornar")
-            return
-            
-        confirmacion = Confirm.ask(f"Segur que vols cancel·lar el partit ID {partido.id}?")
-        if confirmacion:
-            repo.delete(partido)
-            uow.commit()
-            ctx.print_success("Partit eliminat del calendari.")
-            
-    Prompt.ask("Prem Enter per continuar")
-
+def _request(ctx: UIContext, operation: str, data: dict) -> object | None:
+    try:
+        response = ctx.tcp_client.request(operation, data)
+    except (ProtocolError, ServerConnectionError, ValueError) as error:
+        ctx.print_error(str(error))
+        return None
+    if not response["ok"]:
+        error = response["error"]
+        ctx.print_error(error["message"] if error else "Error de servidor.")
+        return None
+    return response["data"]

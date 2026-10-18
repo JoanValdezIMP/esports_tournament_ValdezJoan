@@ -3,8 +3,8 @@ from typing import Sequence
 from models import Match
 from .abstract_repository import SqlAlchemyRepository
 
+
 class SqlAlchemyMatchRepository(SqlAlchemyRepository[Match, int]):
-    
     def get_matches_by_tournament(self, tournament_id: int) -> Sequence[Match]:
         """
         Retorna todos los partidos vinculados a un torneo.
@@ -17,7 +17,9 @@ class SqlAlchemyMatchRepository(SqlAlchemyRepository[Match, int]):
         )
         return self.session.scalars(statement).all()
 
-    def get_head_to_head(self, team_a_id: int, team_b_id: int) -> Sequence[Match]:
+    def get_head_to_head(
+        self, team_a_id: int, team_b_id: int
+    ) -> Sequence[Match]:
         """
         Historial de enfrentamientos directos entre dos equipos.
         Busca partidos donde (A vs B) O (B vs A).
@@ -26,8 +28,14 @@ class SqlAlchemyMatchRepository(SqlAlchemyRepository[Match, int]):
             select(Match)
             .where(
                 or_(
-                    and_(Match.id_team_one == team_a_id, Match.id_team_two == team_b_id),
-                    and_(Match.id_team_one == team_b_id, Match.id_team_two == team_a_id)
+                    and_(
+                        Match.id_team_one == team_a_id,
+                        Match.id_team_two == team_b_id,
+                    ),
+                    and_(
+                        Match.id_team_one == team_b_id,
+                        Match.id_team_two == team_a_id,
+                    ),
                 )
             )
             .order_by(desc(Match.match_date))
@@ -36,7 +44,7 @@ class SqlAlchemyMatchRepository(SqlAlchemyRepository[Match, int]):
 
     def get_recent_results(self, limit: int = 20) -> Sequence[Match]:
         """
-        Los últimos partidos finalizados. 
+        Los últimos partidos finalizados.
         Asumimos que un partido ha finalizado si tiene un ganador asignado.
         """
         statement = (

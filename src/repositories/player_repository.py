@@ -9,8 +9,8 @@ from models import PlayerTeam
 from models import Team
 from datetime import date
 
+
 class SqlAlchemyPlayerRepository(SqlAlchemyRepository[Player, int]):
-    
     def get_paginated(self, page: int, page_size: int) -> Sequence[Player]:
         offset_value = (page - 1) * page_size
         statement = select(Player).offset(offset_value).limit(page_size)
@@ -19,9 +19,7 @@ class SqlAlchemyPlayerRepository(SqlAlchemyRepository[Player, int]):
     def add_player_to_team_direct(self, player_id: int, team_id: int) -> None:
         # Corregido: 'registered_at' en lugar de 'join_date'
         nuevo_vinculo = PlayerTeam(
-            id_player=player_id, 
-            id_team=team_id, 
-            registered_at=date.today() 
+            id_player=player_id, id_team=team_id, registered_at=date.today()
         )
         self.session.add(nuevo_vinculo)
 
@@ -52,12 +50,10 @@ class SqlAlchemyPlayerRepository(SqlAlchemyRepository[Player, int]):
             select(Player)
             .join(PlayerProfile, Player.id_player == PlayerProfile.id_player)
             # Ordenamos ascendentemente (el rango 1 es el mejor)
-            .order_by(PlayerProfile.ranking_position) 
+            .order_by(PlayerProfile.ranking_position)
             .limit(limit)
         )
         return self.session.scalars(statement).all()
-
-
 
     def get_players_by_region(self, region_id: int) -> Sequence[Player]:
         """
@@ -65,12 +61,15 @@ class SqlAlchemyPlayerRepository(SqlAlchemyRepository[Player, int]):
         """
         statement = select(Player).where(Player.id_region == region_id)
         return self.session.scalars(statement).all()
-    
-    # A src/repositories/player_repository.py, afegeix aquest mètode dins de la classe:
+
+    # A src/repositories/player_repository.py, afegeix aquest mètode dins de
+    # la classe:
 
     def search_by_nickname(self, nickname: str) -> Sequence[Player]:
         """
-        Cerca jugadors que continguin la cadena introduïda en el seu nickname (cerca parcial).
+        Find players whose nickname contains the given text.
         """
-        statement = select(Player).where(Player.nickname.ilike(f"%{nickname}%"))
+        statement = select(Player).where(
+            Player.nickname.ilike(f"%{nickname}%")
+        )
         return self.session.scalars(statement).all()

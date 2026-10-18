@@ -1,15 +1,7 @@
 from rich.prompt import Prompt, Confirm, IntPrompt
 from rich.table import Table
 from ui.context import UIContext
-from models import Player, PlayerProfile
-from repositories import PlayerRepository
-from datetime import datetime
-# menu
-# llistar jugadors
-# crear jugador
-# actualitzar jugador
-# eliminar jugador
-# cercar jugador
+from client.tcp_client import ProtocolError, ServerConnectionError
 
 
 def player_menu(ctx: UIContext):
@@ -19,177 +11,197 @@ def player_menu(ctx: UIContext):
         ctx.print_header("Gestió de Jugadors")
 
         ctx.console.print("[bold cyan]1.[/bold cyan] Llistar Jugadors")
-        ctx.console.print("[bold cyan]2.[/bold cyan] Afegir Jugador (Demostrar Relació 1:1)")
+        ctx.console.print(
+            "[bold cyan]2.[/bold cyan] Afegir Jugador (Demostrar Relació 1:1)"
+        )
         ctx.console.print("[bold cyan]3.[/bold cyan] Actualitzar Jugador")
         ctx.console.print("[bold cyan]4.[/bold cyan] Eliminar Jugador")
         ctx.console.print("[bold cyan]5.[/bold cyan] Cercar Jugador")
-        ctx.console.print("[bold cyan]0.[/bold cyan] Tornar al Menú Principal\n")
+        ctx.console.print(
+            "[bold cyan]0.[/bold cyan] Tornar al Menú Principal\n"
+        )
 
-        opcion = Prompt.ask("[bold green]Tria una opció[/bold green]", choices=["0", "1", "2", "3", "4", "5"])
+        option = Prompt.ask(
+            "[bold green]Tria una opció[/bold green]",
+            choices=["0", "1", "2", "3", "4", "5"],
+        )
 
-        if opcion == "1":
-            listar_jugadores(ctx)
-        elif opcion == "2":
-            crear_jugador(ctx)
-        elif opcion == "3":
-            actualizar_jugador(ctx)
-        elif opcion == "4":
-            eliminar_jugador(ctx)
-        elif opcion == "5":
-            cercar_jugador(ctx)
-        elif opcion == "0":
+        if option == "1":
+            list_players(ctx)
+        elif option == "2":
+            create_player(ctx)
+        elif option == "3":
+            update_player(ctx)
+        elif option == "4":
+            delete_player(ctx)
+        elif option == "5":
+            search_players(ctx)
+        elif option == "0":
             break
 
 
-def listar_jugadores(ctx: UIContext):
+def list_players(ctx: UIContext):
     ctx.print_header("Llista de Jugadors")
+    players = _request(ctx, "players.list", {})
+    if players is None:
+        Prompt.ask("Prem Enter per tornar")
+        return
 
-    with ctx.uow_factory() as uow:
-        repo = PlayerRepository(uow, Player)
-        jugadores = repo.get_all()
-
-        if not jugadores:
-            ctx.console.print("[yellow]Encara no hi ha jugadors registrats.[/yellow]\n")
-            Prompt.ask("Prem Enter per tornar")
-            return
-
-        table = Table(show_header=True, header_style="bold magenta")
-        table.add_column("ID", justify="right", style="dim")
-        table.add_column("Nickname")
-        table.add_column("Regió")
-        table.add_column("Perfil")
-
-        for j in jugadores:
-            region_name = getattr(j.region, "name", None) or str(getattr(j, "id_region", "-"))
-            tiene_perfil = "Sí" if getattr(j, "profile", None) else "No"
-            table.add_row(str(j.id), j.nickname, region_name, tiene_perfil)
-
-        ctx.console.print(table)
+    _display_players(ctx, players)
 
     Prompt.ask("\nPrem Enter per tornar")
 
 
-def crear_jugador(ctx: UIContext):
+def create_player(ctx: UIContext):
     ctx.print_header("Afegir Nou Jugador")
     nickname = Prompt.ask("Nickname")
     email = Prompt.ask("Email")
     region_id = IntPrompt.ask("ID de la Regió")
 
-    hoy = datetime.now()
-
-    nuevo_jugador = Player(
-        nickname=nickname,
-        email=email,
-        birth_date=hoy,
-        registration_date=hoy,
-        id_region=region_id,
-        active=True
+    create_profile = Confirm.ask(
+        "Vols crear el seu Perfil de Jugador ara mateix?"
     )
+    request_data = {
+        "nickname": nickname,
+        "email": email,
+        "region_id": region_id,
+    }
+    if create_profile:
+        request_data["ranking_position"] = IntPrompt.ask(
+            "Rànquing inicial", default=0
+        )
 
-    crear_perfil = Confirm.ask("Vols crear el seu Perfil de Jugador ara mateix?")
-    if crear_perfil:
-        ranking = IntPrompt.ask("Rànquing inicial", default=0)
-        nuevo_jugador.profile = PlayerProfile(ranking_position=ranking)
-
-    with ctx.uow_factory() as uow:
-        repo = PlayerRepository(uow, Player)
-        try:
-            repo.add(nuevo_jugador)
-            uow.commit()
-            ctx.print_success(f"Jugador '{nickname}' creat correctament.")
-        except Exception as e:
-            uow.rollback()
-            ctx.print_error(f"Error en desar: {e}")
+    if _request(ctx, "players.create", request_data) is not None:
+        ctx.print_success(f"Jugador '{nickname}' creat correctament.")
 
     Prompt.ask("Prem Enter per continuar")
 
 
-def actualizar_jugador(ctx: UIContext):
+def update_player(ctx: UIContext):
     ctx.print_header("Actualitzar Jugador")
-    id_str = Prompt.ask("Introdueix l'ID del jugador a actualitzar")
+    id_text = Prompt.ask("Introdueix l'ID del jugador a actualitzar")
 
-    if not id_str.isdigit():
+    if not id_text.isdigit():
         ctx.print_error("L'ID ha de ser un número.")
         Prompt.ask("Prem Enter per tornar")
         return
 
-    with ctx.uow_factory() as uow:
-        repo = PlayerRepository(uow, Player)
-        jugador = repo.get(int(id_str))
+    player = _request(ctx, "players.read", {"id": int(id_text)})
+    if player is None:
+        Prompt.ask("Prem Enter per tornar")
+        return
 
-        if not jugador:
-            ctx.print_error("Jugador no trobat.")
-            Prompt.ask("Prem Enter per tornar")
-            return
+    if not isinstance(player, dict) or not isinstance(
+        player.get("nickname"), str
+    ):
+        ctx.print_error("El servidor devolvió datos de jugador no válidos.")
+        Prompt.ask("Prem Enter per tornar")
+        return
 
-        nuevo_nick = Prompt.ask(f"Nou nickname (actual: {jugador.nickname})")
-        if nuevo_nick:
-            jugador.nickname = nuevo_nick
-            uow.commit()
+    new_nickname = Prompt.ask(f"Nou nickname (actual: {player['nickname']})")
+    if new_nickname:
+        updated_player = _request(
+            ctx,
+            "players.update",
+            {"id": int(id_text), "nickname": new_nickname},
+        )
+        if updated_player is not None:
             ctx.print_success("Jugador actualitzat.")
 
     Prompt.ask("Prem Enter per continuar")
 
 
-def eliminar_jugador(ctx: UIContext):
+def delete_player(ctx: UIContext):
     ctx.print_header("Eliminar Jugador")
-    id_str = Prompt.ask("Introdueix l'ID del jugador a eliminar")
+    id_text = Prompt.ask("Introdueix l'ID del jugador a eliminar")
 
-    if not id_str.isdigit():
+    if not id_text.isdigit():
         ctx.print_error("L'ID ha de ser un número.")
         Prompt.ask("Prem Enter per tornar")
         return
 
-    with ctx.uow_factory() as uow:
-        repo = PlayerRepository(uow, Player)
-        jugador = repo.get(int(id_str))
+    player = _request(ctx, "players.read", {"id": int(id_text)})
+    if player is None:
+        Prompt.ask("Prem Enter per tornar")
+        return
 
-        if not jugador:
-            ctx.print_error("Jugador no trobat.")
-            Prompt.ask("Prem Enter per tornar")
-            return
-
-        confirmacion = Confirm.ask(f"Segur que vols eliminar a {jugador.nickname}?")
-        if confirmacion:
-            if getattr(jugador, "profile", None):
-                uow.session.delete(jugador.profile)
-            repo.delete(jugador)
-            try:
-                uow.commit()
-                ctx.print_success("Jugador eliminat.")
-            except Exception as e:
-                uow.rollback()
-                ctx.print_error(f"Error en eliminar el jugador: {e}")
+    nickname = (
+        player.get("nickname", "aquest jugador")
+        if isinstance(player, dict)
+        else "aquest jugador"
+    )
+    confirmation = Confirm.ask(f"Segur que vols eliminar a {nickname}?")
+    if confirmation:
+        deleted = _request(ctx, "players.delete", {"id": int(id_text)})
+        if deleted is not None:
+            ctx.print_success("Jugador eliminat.")
 
     Prompt.ask("Prem Enter per continuar")
 
 
-
-
-def cercar_jugador(ctx: UIContext):
+def search_players(ctx: UIContext):
     ctx.print_header("Cercar Jugador")
-    cerca = Prompt.ask("Introdueix part del nickname a cercar")
-    
-    with ctx.uow_factory() as uow:
-        repo = PlayerRepository(uow, Player)
-        jugadors = repo.search_by_nickname(cerca) # Cridem al nou mètode del repo
+    search_term = Prompt.ask("Introdueix part del nickname a cercar")
+    players = _request(ctx, "players.search", {"nickname": search_term})
+    if players is None:
+        Prompt.ask("Prem Enter per tornar")
+        return
+    _display_players(
+        ctx,
+        players,
+        empty_message="No s'han trobat jugadors amb aquest nom.",
+    )
 
-        if not jugadors:
-            ctx.console.print("[yellow]No s'han trobat jugadors amb aquest nom.[/yellow]")
-            Prompt.ask("Prem Enter per tornar")
-            return
-
-        table = Table(show_header=True, header_style="bold magenta")
-        table.add_column("ID", justify="right", style="dim")
-        table.add_column("Nickname")
-        table.add_column("Regió")
-        table.add_column("Perfil")
-
-        for j in jugadors:
-            region_name = getattr(j.region, "name", None) or str(getattr(j, "id_region", "-"))
-            tiene_perfil = "Sí" if getattr(j, "profile", None) else "No"
-            table.add_row(str(j.id), j.nickname, region_name, tiene_perfil)
-
-        ctx.console.print(table)
-    
     Prompt.ask("\nPrem Enter per tornar")
+
+
+def _request(ctx: UIContext, operation: str, data: dict) -> object | None:
+    try:
+        response = ctx.tcp_client.request(operation, data)
+    except (ProtocolError, ServerConnectionError, ValueError) as error:
+        ctx.print_error(str(error))
+        return None
+
+    if not response["ok"]:
+        error = response["error"]
+        ctx.print_error(error["message"] if error else "Error de servidor.")
+        return None
+    return response["data"]
+
+
+def _display_players(
+    ctx: UIContext,
+    players: object,
+    empty_message: str = "Encara no hi ha jugadors registrats.",
+) -> None:
+    if not isinstance(players, list) or any(
+        not isinstance(player, dict)
+        or not isinstance(player.get("id"), int)
+        or not isinstance(player.get("nickname"), str)
+        or not isinstance(player.get("region"), str)
+        or not isinstance(player.get("has_profile"), bool)
+        for player in players
+    ):
+        ctx.print_error(
+            "El servidor devolvió una lista de jugadores no válida."
+        )
+        return
+
+    if not players:
+        ctx.console.print(f"[yellow]{empty_message}[/yellow]\n")
+        return
+
+    table = Table(show_header=True, header_style="bold magenta")
+    table.add_column("ID", justify="right", style="dim")
+    table.add_column("Nickname")
+    table.add_column("Regió")
+    table.add_column("Perfil")
+    for player in players:
+        profile = "Sí" if player["has_profile"] else "No"
+        table.add_row(
+            str(player["id"]),
+            player["nickname"],
+            player["region"],
+            profile,
+        )
+    ctx.console.print(table)

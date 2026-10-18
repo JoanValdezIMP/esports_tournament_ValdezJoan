@@ -1,24 +1,27 @@
-# main.py
-import sys
 import os
+import sys
 
-# Assegurem que Python trobi la carpeta 'src'
-sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
 
-# IMPORTANTE: Importa 'Base' i 'engine' des d'on vas definir la teva DB
-from domain.db import get_uow, Base, engine 
-from ui.context import UIContext
-from ui.cli import main_menu
+def main() -> None:
+    sys.path.append(os.path.join(os.path.dirname(__file__), "src"))
 
-if __name__ == "__main__":
-    Base.metadata.create_all(engine)
+    from client.tcp_client import TcpClient
+    from ui.cli import main_menu
+    from ui.context import UIContext
 
-    # Inicialitzem el context
-    contexto = UIContext(uow_factory=get_uow)
-    
-    # Llancem el menú principal
+    tcp_client = TcpClient(
+        host=os.getenv("SERVER_HOST", "127.0.0.1"),
+        port=int(os.getenv("SERVER_PORT", "5000")),
+    )
+    context = UIContext(tcp_client=tcp_client)
 
     try:
-        main_menu(contexto)
+        main_menu(context)
     except KeyboardInterrupt:
-        contexto.console.print("\n\n[bold red]Programa interromput.[/bold red]")
+        context.console.print(
+            "\n\n[bold red]Programa interromput.[/bold red]"
+        )
+
+
+if __name__ == "__main__":
+    main()

@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
-from sqlalchemy import create_engine
+from sqlalchemy.engine import Engine
 from sqlalchemy.orm import sessionmaker, Session
+
 
 class AbstractUnitOfWork(ABC):
     def __enter__(self):
@@ -19,6 +20,7 @@ class AbstractUnitOfWork(ABC):
     @abstractmethod
     def rollback(self) -> None:
         pass
+
 
 class SqlAlchemyUnitOfWork(AbstractUnitOfWork):
     def __init__(self, session: Session):
@@ -39,9 +41,10 @@ class SqlAlchemyUnitOfWork(AbstractUnitOfWork):
     def rollback(self) -> None:
         self.session.rollback()
 
+
 class UnitOfWorkFactory:
-    def __init__(self, database_url: str):
-        self.engine = create_engine(database_url)
+    def __init__(self, engine: Engine):
+        self.engine = engine
         self.session_class = sessionmaker(
             bind=self.engine,
             autoflush=False,

@@ -9,4 +9,3 @@ from .playerteam import PlayerTeam
 from .tournament import Tournament
 from .teamtournament import TeamTournament
 from .match import Match
-

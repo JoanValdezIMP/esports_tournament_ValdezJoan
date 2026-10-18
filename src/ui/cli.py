@@ -6,6 +6,8 @@ from ui.views.team_views import team_menu
 from ui.views.match_views import match_menu
 from ui.views.tournament_views import tournament_menu
 from ui.components import welcome_panel
+
+
 def main_menu(ctx: UIContext):
     """Display the main menu and route user selections."""
     while True:
@@ -20,7 +22,10 @@ def main_menu(ctx: UIContext):
         ctx.console.print("[bold cyan]5.[/bold cyan] Gestió de Tornejos")
         ctx.console.print("[bold cyan]0.[/bold cyan] Sortir\n")
 
-        option = Prompt.ask("[bold green]Tria una opció[/bold green]", choices=["0", "1", "2", "3", "4", "5"])
+        option = Prompt.ask(
+            "[bold green]Tria una opció[/bold green]",
+            choices=["0", "1", "2", "3", "4", "5"],
+        )
 
         if option == "1":
             team_menu(ctx)
@@ -33,5 +38,8 @@ def main_menu(ctx: UIContext):
         elif option == "5":
             tournament_menu(ctx)
         elif option == "0":
-            ctx.console.print("\n[bold yellow]Fins aviat! Sortint de forma segura...[/bold yellow]")
+            ctx.console.print(
+                "\n[bold yellow]Fins aviat! Sortint de forma segura..."
+                "[/bold yellow]"
+            )
             break

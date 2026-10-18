@@ -3,14 +3,18 @@ from typing import Sequence, Optional
 from .abstract_repository import SqlAlchemyRepository
 from models import PlayerProfile
 
-class SqlAlchemyPlayerProfileRepository(SqlAlchemyRepository[PlayerProfile, int]):
-    
+
+class SqlAlchemyPlayerProfileRepository(
+    SqlAlchemyRepository[PlayerProfile, int]
+):
     def get_by_player_id(self, player_id: int) -> Optional[PlayerProfile]:
         """
         Obtiene el perfil de estadísticas de un jugador específico.
         Ideal para mostrar la 'Tarjeta del Jugador' o su Dashboard personal.
         """
-        statement = select(PlayerProfile).where(PlayerProfile.id_player == player_id)
+        statement = select(PlayerProfile).where(
+            PlayerProfile.id_player == player_id
+        )
         return self.session.scalar(statement)
 
     def get_top_ranked(self, limit: int = 10) -> Sequence[PlayerProfile]:
@@ -20,8 +24,8 @@ class SqlAlchemyPlayerProfileRepository(SqlAlchemyRepository[PlayerProfile, int]
         """
         statement = (
             select(PlayerProfile)
-            # nullslast() es un salvavidas: si un jugador es nuevo y su 
-            # ranking es nulo/None, lo mandará al final de la lista 
+            # nullslast() es un salvavidas: si un jugador es nuevo y su
+            # ranking es nulo/None, lo mandará al final de la lista
             # en lugar de ponerlo en el top 1 por error.
             .order_by(PlayerProfile.ranking_position.asc().nullslast())
             .limit(limit)
@@ -35,7 +39,8 @@ class SqlAlchemyPlayerProfileRepository(SqlAlchemyRepository[PlayerProfile, int]
         """
         statement = (
             select(PlayerProfile)
-            # Aquí sí usamos desc() porque queremos el número MÁS ALTO de partidas primero
+            # Aquí sí usamos desc() porque queremos el número MÁS ALTO de
+            # partidas primero
             .order_by(desc(PlayerProfile.total_matches))
             .limit(limit)
         )
